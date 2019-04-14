@@ -1,7 +1,7 @@
 Cloudmarker
-============
+===========
 
-Cloudmarker is a cloud security monitoring framework.
+Cloudmarker is a cloud monitoring framework.
 
 .. image:: https://travis-ci.com/cloudmarker/cloudmarker.svg?branch=master
     :target: https://travis-ci.com/cloudmarker/cloudmarker
@@ -13,23 +13,171 @@ Cloudmarker is a cloud security monitoring framework.
    :target: https://github.com/cloudmarker/cloudmarker/blob/master/LICENSE.rst
 
 
+§§
+--
+
+.. contents::
+    :backlinks: none
+
+
+What is Cloudmarker?
+--------------------
+
+Cloudmarker is a cloud monitoring tool and framework. It can be used
+either as a ready-made tool that audits your Azure or GCP cloud
+environment. As a monitoring tool, it performs the following actions:
+
+- Retrieves data about each configured cloud using the cloud APIs.
+- Saves or indexes the retrieved data into each configured storage
+  system or indexing engine.
+- Analyzes the data for potential issues and generates events that
+  represent the detected issues.
+- Saves the events to configured storage or indexing engines as well as
+  sends the events as alerts to alerting destinations.
+
+Each of the above four aspects of the tool can be configured via a
+configuration file. For example, it is possible to configure the tool to
+pull data from Azure and index its data in Elasticsearch while it also
+pulls data from GCP and indexes the GCP data in MongoDB. Similarly, it
+is possible to configure the tool to check for insecure firewall rules
+in the Azure data, generate events for it and send them as alerts by
+email while it checks for another type of issue in the GCP data,
+generate events for it and save those events in MongoDB itself.
+
+This degree of flexibility to configure audits for different clouds in
+different ways comes from the fact that Cloudmarker is designed as a
+combination of lightweight framework and a bunch of plugins that do the
+heavylifting for retrieving cloud data, storing the data, analyzing
+the data and generating events, and sending alerts. These four types of
+plugins are formally known as cloud plugins, store plugins, event
+plugins, and alert plugins, respectively.
+
+As a result of this plugin architecture, Cloudmarker can also be used as
+a framework to develop your own plugins that extend its capabilities by
+adding support for new types of clouds or data sources, storage or
+indexing engines, event generation, and alerting destinations.
+
+
+Why Cloudmarker?
+----------------
+
+One might wonder why we need a new project like this when similar
+projects exist. When we began working on this project, we were aware of
+similar tools that supported AWS and GCP but none that supported Azure
+at that time. As a result, we wrote our own tool to support Azure. We
+later added support for GCP as well. We use it for our own Azure and GCP
+clouds. What began as a tiny proof of concept gradually turned into a
+fair amount of code, so we thought, we might as well share this project
+online, so that others could use it and see if they find value in it.
+
+So far, we have got the following feedback from others about this
+project:
+
+- It is simple. It is easy to understand how to use the four types of
+  plugins (clouds, stores, events, and alerts) to perform an audit.
+- It is excellent at creating an inventory of the cloud environment.
+- The data inventory it creates is easy to query.
+- It is good at detecting insecure firewall rules.
+
+We also realize that we can add a lot more functionality to this project
+to make it a more powerful tool for cloud information and event
+management. See the `Wishlist`_ section below to see new features we
+would like to see in this project. Contributions and pull requests are
+welcome.
+
+We hope that you would give this project a shot, see if it addresses
+your needs, and provide us some feedback by posting a comment in our
+`feedback thread <TODO>`_ or by creating a `new issue
+<https://github.com/cloudmarker/cloudmarker/issues/new>`_.
+
+
+Features
+--------
+
+Since Cloudmarker is not just a tool but also a framework, a lot of its
+functionality can be extended by writing plugins. However, Cloudmarker
+also comes bundled with a default set of plugins that can be used as is
+without writing a single line of code. Here is a brief overview of the
+features that come bundled with Cloudmarker:
+
+- Perform scheduled or ad hoc audits of cloud environment.
+- Retrieve data from Azure and GCP.
+- Store or index retrieved data in Elasticsearch, MongoDB, Splunk, and
+  the file system.
+- Look for insecure firewall rules and generate firewall rule events.
+- Send alerts for events via email and Slack as well as save alerts in
+  one of the supported storage or indexing engines (see the second point
+  above).
+- Normalize firewall rules from Azure and GCP which are in different
+  formats to a common object model (``"com"``) so that a single query or
+  event rule can search for or detect issues in firewall rules from both
+  clouds.
+
+
+Wishlist
+--------
+
+- Support AWS. (issue `#80
+  <https://github.com/cloudmarker/cloudmarker/issues/80>`_)
+- Add more event plugins in :mod:`cloudmarker.events` package to detect
+  different types of insecure configuration.
+- Normalize other types of data into a common object model (``"com"``)
+  apart from firewall rules.
+
+
 Setup Development Environment
 -----------------------------
 
-Please follow these steps to setup the development environment:
+This section describes how to setup a development environment for
+Cloudmarker. This section is useful for those who would like to
+contribute to Cloudmarker or run Cloudmarker directly from its source.
 
-1. Ensure Python 3 is installed. ::
+1. We use primarily three tools to perform development on this project:
+   Python 3, Git, and Make. Your system may already have these tools.
+   But if not, here are some brief instructions on how they can be
+   installed.
 
-    # On macOS
-    brew install python
+   On macOS, if you have `Homebrew <https://brew.sh/>`_ installed, then
+   these tools can be be installed easily with the following command: ::
 
-2. Clone the project repository. ::
+    brew install python git
+
+   On a Debian GNU/Linux system or in another Debian-based Linux
+   distribution, they can be installed with the following commands: ::
+
+    apt-get update
+    apt-get install python3 python3-venv git make
+
+   On a CentOS Linux distribution, they can be installed with these
+   commands: ::
+
+    yum install centos-release-scl
+    yum install git make rh-python36
+    scl enable rh-python36 bash
+
+   Note: The `scl enable` command starts a new shell for you to use
+   Python 3.
+
+   On any other system, we hope you can figure out how to install these
+   tools yourself.
+
+2. Clone the project repository and enter its top-level directory: ::
 
     git clone https://github.com/cloudmarker/cloudmarker.git
+    cd cloudmarker
 
 3. Create a virtual Python environment for development purpose: ::
 
     make venv deps
+
+   This creates a virtual Python environment at ``~/.venv/cloudmarker``.
+   Additionally, it also creates a convenience script named ``venv`` in
+   the current directory to easily activate the virtual Python
+   environment which we will soon see in the next point.
+
+   To undo this step at anytime in future, i.e., delete the virtual
+   Python environment directory, either enter
+   ``rm -rf venv ~/.venv/cloudmarker`` or enter ``make rmvenv``.
 
 4. Activate the virtual Python environment: ::
 
@@ -37,12 +185,28 @@ Please follow these steps to setup the development environment:
 
 5. In the top-level directory of the project, enter this command: ::
 
-    python3 -m cloudmarker
+    python3 -m cloudmarker -n
 
-   Right now, it generates mock data at ``/tmp/cloudmarker``. More
-   functionality will be added later.
+   This generates mock data at ``/tmp/cloudmarker``. This step serves as
+   a sanity check that ensures that the development environment is
+   correctly set up and that the Cloudmarker audit framework is running
+   properly.
 
-6. Run the unit tests, code coverage, linters, and document generator: ::
+6. Now that the project is set up correctly, you can start editing
+   ``config.yaml`` to configure Cloudmarker to scan/audit your cloud or you
+   can perform more development on the Cloudmarker source code. To learn
+   more about how to configure Cloudmarker, see `Configuration`_ section
+   for details.
+
+7. If you have set up a development environment to perform more
+   development on Cloudmarker, please consider sending a pull request to
+   us if you think your development work would be useful to the
+   community.
+
+   Before you send a pull request, please run the unit tests, code
+   coverage, linters, and document generator to ensure that no existing
+   test was broken and the pull request adheres to our coding
+   conventions: ::
 
     make test
     make coverage
@@ -58,3 +222,54 @@ Please follow these steps to setup the development environment:
 
    Open ``docs/_build/html/index.html`` with a web browser to view the
    generated documentation.
+
+
+Configuration
+-------------
+
+
+Test Area
+---------
+
+This is merely a test area to see how RST is rendered by GitHub and
+Sphinx. We will remove this section later.
+
+Test 1
+~~~~~~
+
+See :class:`cloudmarker.clouds.azurecloud.AzureCloud`.
+
+
+Resources
+---------
+
+Here is a list of useful links about this project:
+
+- `Documentation on Read The Docs <https://cloudmarker.readthedocs.org/>`_
+- `Latest release on PyPI <https://pypi.python.org/pypi/cloudmarker>`_
+- `Source code on GitHub <https://github.com/cloudmarker/cloudmarker>`_
+- `Issue tracker on GitHub <https://github.com/cloudmarker/cloudmarker/issues>`_
+- `Changelog on GitHub <https://github.com/cloudmarker/cloudmarker/blob/master/CHANGES.rst>`_
+- `Cloudmarker channel on Slack <https://cloudmarker.slack.com/>`_
+- `Invitation to Cloudmarker channel on Slack <https://bit.ly/cmslack>`_
+
+
+Support
+-------
+
+To report bugs, suggest improvements, or ask questions, please create a
+new issue at http://github.com/cloudmarker/cloudmarker/issues.
+
+
+License
+-------
+
+This is free software. You are permitted to use, copy, modify, merge,
+publish, distribute, sublicense, and/or sell copies of it, under the
+terms of the MIT License. See `LICENSE.rst`_ for the complete license.
+
+This software is provided WITHOUT ANY WARRANTY; without even the implied
+warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See
+`LICENSE.rst`_ for the complete disclaimer.
+
+.. _LICENSE.rst: https://github.com/cloudmarker/cloudmarker/blob/master/LICENSE.rst
